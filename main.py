@@ -47,9 +47,7 @@ def retrieve(keyword="", account="anarchyhasnogods",sent_to="randowhale", positi
                 if keyword != "":
                     memos[i][2].split(keyword)
                     if type(memos[i][2]) == list:
-                        for seg in memos[i][2]:
-                            if seg != keyword and remove_keyword:
-                                memos[i][2] += seg
+                        
                         has_keyword = True
                 has_account = memos[i][1] == account
                 #print(memos[i][1], account)
@@ -139,3 +137,4 @@ def get_memo(history_list):
 
 
 
+retrieve()
