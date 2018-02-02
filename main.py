@@ -6,7 +6,7 @@ import time
 
 
 
-def retrieve(keyword="", account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = False, recent = 1, step = 10000, minblock = -1, node="wss://steemd-int.steemit.com", remove_keyword = True):
+def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd-int.steemit.com", remove_keyword = True):
     node_connection = create_connection(node)
     s = Steem(node=node_connection)
     memo_list = []
@@ -23,11 +23,14 @@ def retrieve(keyword="", account="anarchyhasnogods",sent_to="randowhale", positi
         # This gets the total amount of items in the accounts history
         # This it to prevent errors related to going before the creation of the account
         size = s.get_account_history(sent_to,-1,0)[0][0]
-        #print(size)
+
+        print(size)
         position = size
 
         if position < 0:
             position = step +1
+        if step > position:
+            step = position - 1
         while found:
             # Checks if the
 
@@ -44,11 +47,22 @@ def retrieve(keyword="", account="anarchyhasnogods",sent_to="randowhale", positi
 
                 if memos[i][3] < minblock:
                     has_min_block = True
-                if keyword != "":
-                    memos[i][2].split(keyword)
-                    if type(memos[i][2]) == list:
-                        
-                        has_keyword = True
+                if keyword != []:
+                    new_memo = str(memos[i][2])
+
+                    new_memo = new_memo.split(':')
+                    newest_memo = []
+                    for ii in new_memo:
+                        if ii != ":":
+                            newest_memo.append(ii)
+                    for ii in range(0,int(len(newest_memo)), 2):
+
+                        if [newest_memo[ii], newest_memo[ii+1]] == keyword:
+                            has_keyword = True
+                            break
+                    memos[i][2] = newest_memo
+
+
                 has_account = memos[i][1] == account
                 #print(memos[i][1], account)
 
@@ -137,4 +151,3 @@ def get_memo(history_list):
 
 
 
-retrieve()
