@@ -92,20 +92,10 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
 
 
         return memo_list
-
-
-
-
-
     # This checks if it has the keyword or is by the account
 
 
-
-
-
-
-
-def save_memo(information,to ,account_from, active_key,transaction_size=0.001,asset="SBD", node="wss://steemd-int.steemit.com"):
+def save_memo(information, to, account_from, active_key, transaction_size=0.001, asset="SBD", node="wss://steemd-int.steemit.com"):
     index = None
     node_connection = create_connection(node)
     s = Steem(node=node_connection, keys=active_key)
@@ -142,6 +132,7 @@ def get_memo(history_list):
             if type(ii) == int:
 
                 memo.append(ii)
+
     return memos
 
 

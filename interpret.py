@@ -8,15 +8,17 @@ def start_account(account_name,active_key,keyword_list=[], our_memo_account="spa
 
     print("here")
     if keyword_list == []:
-        keyword_list.append(["gp","0"])
-        keyword_list.append(["ad-token-perm","0"])
-        keyword_list.append(["token-upvote-perm","0"])
-        keyword_list.append(["token-upvote-temp","0"])
-        keyword_list.append(["ad-token-temp","0"])
-        keyword_list.append(["token-post-review","0"])
-        keyword_list.append(["experience","0"])
-        keyword_list.append(["steem-owed","0"])
-        keyword_list.append(["vote","0"])
+        keyword_list.append(["gp", "0"])
+        keyword_list.append(["ad-token-perm", "0"])
+        keyword_list.append(["token-upvote-perm", "0"])
+        keyword_list.append(["token-upvote-temp", "0"])
+        keyword_list.append(["ad-token-temp", "0"])
+        keyword_list.append(["token-post-review", "0"])
+        keyword_list.append(["experience", "0"])
+        keyword_list.append(["steem-owed", "0"])
+        keyword_list.append(["vote", "PLACEHOLDER"])
+        keyword_list.append(["vote-link", "PLACEHOLDER"])
+
     keyword_list.append(["account", account_name])
     real_list = []
     for i in keyword_list:
@@ -55,6 +57,12 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
                 if changes[ii][1] == "DELETE":
                     info[i+1].pop()
                     info[i].pop()
+                elif changes[ii][0] == "vote":
+                    if info[i+1] == "PLACEHOLDER":
+                        info[i+1] = ""
+                    info[i+1] += ";"+changes[ii][1]
+
+
                 else:
                     info[i + 1] = changes[ii][1] # if key is correct changes variable
                 changes.pop(ii) # removes it from changes and exists loop
@@ -66,7 +74,7 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
             info.append(i[1])
 
     info = list_to_full_string(info)
-    main.save_memo(info, our_memo_account, our_sending_account, active_key)
+    return main.save_memo(info, our_memo_account, our_sending_account, active_key)
 
 
 
@@ -79,32 +87,44 @@ def list_to_full_string(list_set):
         total_len += len(i)
 
     if total_len > 2000:
-        for i in range(0,len(list_set-1), 2):
+        for i in range(0, len(list_set-1), 2):
             if list_set[i] == "vote":
                 new_set = list_set[i]
-                new_set = new_set.split(";")
                 link_pos = static_vote_memo(new_set)
-            list_set[i+1] = " "
+            list_set[i+1] = "PLACEHOLDER"
 
         for i in range(0,len(list_set)-1,2):
             if list_set[i] == "vote_link":
+                if list_set[i+1] == "PLACEHOLDER":
+                    list_set[i+1] = ""
                 list_set[i+1] += ";" + link_pos
+
 
     string_main = ""
     print(list_set)
     for i in range(0,len(list_set), 2):
         string_main += list_set[i] + ":" + list_set[i+1] + ":"
 
-
     return string_main[0:len(string_main)-2]
 
 
 
-   
+def vote_post(post_link, submission_author, submission_time, ratio, our_memo_account, our_sending_account, active_key):
+
+    return main.save_memo("post_link:" + post_link+":submission_author:" + submission_author + ":time:" + str(submission_time)
+                          + ":ratio:" + str(ratio),our_memo_account, our_sending_account, active_key)
 
 
 def static_vote_memo(vote_list):
+
+
+    return main.save_memo(info, our_memo_account, our_sending_account, active_key)
+
+
+def get_vote_list(memo_account,sending_account,id,node):
     pass
+
+
 
 
 
