@@ -2,31 +2,35 @@
 # If you are not using our memo system exactly feel free to take a look at these functions but they won't be too useful
 
 from memo_saving import main
+import json
 
 
-def start_account(account_name,active_key,keyword_list=[], our_memo_account="space-pictures", our_sending_account="anarchyhasnogods", node="wss://steemd-int.steemit.com"):
+def start_account(account_name,active_key, our_memo_account="space-pictures", our_sending_account="anarchyhasnogods", node="wss://steemd-int.steemit.com"):
+    keyword_dict = {}
 
-    print("here")
-    if keyword_list == []:
-        keyword_list.append(["gp", "0"])
-        keyword_list.append(["ad-token-perm", "0"])
-        keyword_list.append(["token-upvote-perm", "0"])
-        keyword_list.append(["token-upvote-temp", "0"])
-        keyword_list.append(["ad-token-temp", "0"])
-        keyword_list.append(["token-post-review", "0"])
-        keyword_list.append(["experience", "0"])
-        keyword_list.append(["steem-owed", "0"])
-        keyword_list.append(["vote", "PLACEHOLDER"])
-        keyword_list.append(["vote-link", "PLACEHOLDER"])
 
-    keyword_list.append(["account", account_name])
-    real_list = []
-    for i in keyword_list:
-        real_list.append(i[0])
-        real_list.append(i[1])
-    info = list_to_full_string(real_list)
+    if True:
+        keyword_dict["type"] = "account"
 
-    main.save_memo(info, our_memo_account, our_sending_account, active_key)
+        keyword_dict["gp"] = "0"
+        keyword_dict["ad-token-perm"] = "0"
+        keyword_dict["token-upvote-perm"] =  "0"
+
+        #fix before use
+        keyword_dict["token-upvote-temp"] =  "0"
+        keyword_dict["ad-token-temp"]= "0"
+        keyword_dict["token-post-review"]= "0"
+        keyword_dict["experience"]= "0"
+        keyword_dict["steem-owed"]= "0"
+        keyword_dict["vote"]= "PLACEHOLDER"
+        keyword_dict["vote-link"]= "PLACEHOLDER"
+
+    keyword_dict["account"] = account_name
+
+    #info = list_to_full_string(real_list)
+    print("ddd", our_sending_account, our_memo_account)
+
+    main.save_memo(keyword_dict, our_memo_account, our_sending_account, active_key)
 
 
 
@@ -35,10 +39,11 @@ def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account 
 
     return_info = main.retrieve(["account",account], account=our_account, sent_to=our_memo_account)
 
+    if return_info != []:
 
 
-    return return_info[0]
-
+        return return_info[0]
+    return None
 
 
 
@@ -48,30 +53,19 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
     #Each seperate change is [keyword,new_information]
     info = get_account_info(account,our_sending_account, our_memo_account)[2]
 
+    info_dict = json.dumps(info[2])
+    for i in changes:
+        if i[0] == "vote":
+            info_dict[i[0]].append(i[1])
+        elif i[1] == "DELETE":
+            del info_dict[i[0]]
+
+        else:
+            info_dict[i[0]] = i[1]
+
+    # USE JSON FIX
 
 
-
-    for i in range(0, len(info), 2): # First one is key, second one is var
-        for ii in range(len(changes)):
-            if changes[ii][0] == info[i]:# Checks if key is correct
-                if changes[ii][1] == "DELETE":
-                    info[i+1].pop()
-                    info[i].pop()
-                elif changes[ii][0] == "vote":
-                    if info[i+1] == "PLACEHOLDER":
-                        info[i+1] = ""
-                    info[i+1] += ";"+changes[ii][1]
-
-
-                else:
-                    info[i + 1] = changes[ii][1] # if key is correct changes variable
-                changes.pop(ii) # removes it from changes and exists loop
-                break
-
-    if len(changes) != 0:
-        for i in changes:
-            info.append(i[0])
-            info.append(i[1])
 
     info = list_to_full_string(info)
     return main.save_memo(info, our_memo_account, our_sending_account, active_key)
@@ -81,47 +75,41 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
 
 
 
-def list_to_full_string(list_set):
-    total_len = 0
-    for i in list_set:
-        total_len += len(i)
-
+def list_to_full_string(list_set,our_memo_account, our_sending_account, active_key):
+    dump_list = json.dumps(list_set)
+    total_len = len(dump_list)
     if total_len > 2000:
-        for i in range(0, len(list_set-1), 2):
-            if list_set[i] == "vote":
-                new_set = list_set[i]
-                link_pos = static_vote_memo(new_set)
-            list_set[i+1] = "PLACEHOLDER"
+        vote_list_post = main.save_memo(json.dumps(list_set["vote"]), our_memo_account, our_sending_account, active_key)
+        list_set["vote"] = []
+        list_set["vote-link"].append([vote_list_post, our_memo_account])
 
-        for i in range(0,len(list_set)-1,2):
-            if list_set[i] == "vote_link":
-                if list_set[i+1] == "PLACEHOLDER":
-                    list_set[i+1] = ""
-                list_set[i+1] += ";" + link_pos
+    return json.dumps(list_set)
 
 
-    string_main = ""
-    print(list_set)
-    for i in range(0,len(list_set), 2):
-        string_main += list_set[i] + ":" + list_set[i+1] + ":"
-
-    return string_main[0:len(string_main)-2]
-
+    return list_set
 
 
 def vote_post(post_link, submission_author, submission_time, ratio, our_memo_account, our_sending_account, active_key):
-
+    # FIX
     return main.save_memo("post_link:" + post_link+":submission_author:" + submission_author + ":time:" + str(submission_time)
                           + ":ratio:" + str(ratio),our_memo_account, our_sending_account, active_key)
 
 
-def static_vote_memo(vote_list):
+def get_account_list(sending_account,memo_account_list, days = 7):
+    block = days * 24 * 60 * 20
+    # checks up to 7 days ago
+    memo_list = []
+    temp_list = []
+    for i in memo_account_list:
+        temp_list.append(main.retrieve(["type", "account"], sending_account, i, not_all_accounts = False, minblock=block))
+        accounts_in_list = []
+        for ii in temp_list:
 
+            print(ii)
 
-    return main.save_memo(info, our_memo_account, our_sending_account, active_key)
+def get_vote_list(memo_account, sending_account, id, node):
+    return_info = main.retrieve(keyword=[],account=sending_account, sent_to = memo_account, )
 
-
-def get_vote_list(memo_account,sending_account,id,node):
     pass
 
 

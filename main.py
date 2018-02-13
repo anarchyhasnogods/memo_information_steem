@@ -3,10 +3,10 @@
 from websocket import create_connection
 from steem import Steem
 import time
+import json
 
-
-
-def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd-int.steemit.com", remove_keyword = True):
+def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd-int.steemit.com", not_all_accounts = True):
+    # minblock is blocks before current block
     node_connection = create_connection(node)
     s = Steem(node=node_connection)
     memo_list = []
@@ -22,50 +22,47 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
         memo_list = []
         # This gets the total amount of items in the accounts history
         # This it to prevent errors related to going before the creation of the account
-        size = s.get_account_history(sent_to,-1,0)[0][0]
-
-        print(size)
+        memo_thing = s.get_account_history(sent_to,-1,0)
+        size = memo_thing[0][0]
+        if minblock > 0:
+            minblock = memo_thing[0][1]["block"] - minblock
         position = size
-
         if position < 0:
             position = step +1
         if step > position:
             step = position - 1
+        print(3, position)
         while found:
+            print(found)
             # Checks if the
 
-            if recent > 0 and len(memo_list) > 0:
+            if (recent > 0 and len(memo_list) > 0) and not_all_accounts:
                 if len(memo_list) >= recent:
+
                     break
+
             history = s.get_account_history(sent_to, position, step)
             memos = get_memo(history)
             has_min_block = False
             for i in range(len(memos)-1, -1, -1):
-                if len(memo_list) >= recent:
+                if len(memo_list) >= recent and not_all_accounts:
                     break
                 has_keyword = False
 
                 if memos[i][3] < minblock:
                     has_min_block = True
                 if keyword != []:
-                    new_memo = str(memos[i][2])
-
-                    new_memo = new_memo.split(':')
-                    newest_memo = []
-                    for ii in new_memo:
-                        if ii != ":":
-                            newest_memo.append(ii)
-                    for ii in range(0,int(len(newest_memo)), 2):
-
-                        if [newest_memo[ii], newest_memo[ii+1]] == keyword:
+                    try:
+                        new_memo = json.loads(str(memos[i][2]))
+                        if new_memo[keyword[0]] == keyword[1]:
                             has_keyword = True
-                            break
-                    memos[i][2] = newest_memo
+                    except:
+                        pass
 
 
                 has_account = memos[i][1] == account
                 #print(memos[i][1], account)
-
+                print("here")
                 if keyword_and_account:
                     if has_keyword and has_account:
 
@@ -99,11 +96,10 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
     index = None
     node_connection = create_connection(node)
     s = Steem(node=node_connection, keys=active_key)
+    print(to,account_from)
+    s.transfer(to,transaction_size,asset=asset,account=account_from, memo=json.dumps(information))
 
-    s.transfer(to,transaction_size,asset=asset,account=account_from, memo=information)
-
-    index = retrieve(account=account_from, sent_to=to, recent=1, step=50)
-    #print(index)
+    index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["account",information["account"]])
     if index == []:
         return 0
     return index[0][0]
