@@ -86,13 +86,17 @@ def list_to_full_string(list_set,our_memo_account, our_sending_account, active_k
     return json.dumps(list_set)
 
 
-    return list_set
 
 
 def vote_post(post_link, submission_author, submission_time, ratio, our_memo_account, our_sending_account, active_key):
     # FIX
-    return main.save_memo("post_link:" + post_link+":submission_author:" + submission_author + ":time:" + str(submission_time)
-                          + ":ratio:" + str(ratio),our_memo_account, our_sending_account, active_key)
+    json_thing = {}
+    json_thing["post_link"] = post_link
+    json_thing["submission_author"] = submission_author
+    json_thing["time"] = str(submission_time)
+    json_thing["ratio"] = str(ratio)
+
+    return main.save_memo(json.dumps(json_thing),our_memo_account, our_sending_account, active_key)
 
 
 def get_account_list(sending_account,memo_account_list, days = 7):
