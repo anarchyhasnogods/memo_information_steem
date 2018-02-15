@@ -104,15 +104,26 @@ def get_account_list(sending_account,memo_account_list, days = 7):
     # checks up to 7 days ago
     memo_list = []
     temp_list = []
+    accounts_in_list = {"accounts": []}
+
     for i in memo_account_list:
         temp_list.append(main.retrieve(["type", "account"], sending_account, i, not_all_accounts = False, minblock=block))
-        accounts_in_list = []
-        for ii in temp_list:
+        for ii in temp_list[0]:
+            ii[2] = json.loads(ii[2])
+            if (ii[2]["account"] not in accounts_in_list["accounts"]):
 
-            print(ii)
+                accounts_in_list["accounts"].append(ii[2]["account"])
+                accounts_in_list[ii[2]["account"]] = ii
+
+            elif accounts_in_list[ii[2]["account"]][0] > ii[0]:
+                accounts_in_list[ii[2]["account"]] = ii
+
+    # Account_in_list is a dictionary, "accounts" is a list of accounts. Each account has its full account memo info in the dict under its account name
+    # to go through info in accounts iterate through the account list as dictionary keys
+    return accounts_in_list
 
 def get_vote_list(memo_account, sending_account, id, node):
-    return_info = main.retrieve(keyword=[],account=sending_account, sent_to = memo_account, )
+    return_info = main.retrieve(keyword=["type","post-memo"],account=sending_account, sent_to = memo_account )
 
     pass
 

@@ -5,7 +5,7 @@ from steem import Steem
 import time
 import json
 
-def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd-int.steemit.com", not_all_accounts = True):
+def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd.privex.io", not_all_accounts = True):
     # minblock is blocks before current block
     node_connection = create_connection(node)
     s = Steem(node=node_connection)
@@ -62,7 +62,6 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
 
                 has_account = memos[i][1] == account
                 #print(memos[i][1], account)
-                print("here")
                 if keyword_and_account:
                     if has_keyword and has_account:
 
