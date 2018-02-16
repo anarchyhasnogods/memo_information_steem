@@ -54,6 +54,7 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
                 if keyword != []:
                     try:
                         new_memo = json.loads(str(memos[i][2]))
+                        print(new_memo)
                         if new_memo[keyword[0]] == keyword[1]:
                             has_keyword = True
                     except:
@@ -97,10 +98,13 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
     s = Steem(node=node_connection, keys=active_key)
     print(to,account_from)
     s.transfer(to,transaction_size,asset=asset,account=account_from, memo=json.dumps(information))
-
-    index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["account",information["account"]])
-    if index == []:
-        return 0
+    print("here")
+    if information["type"] == "account":
+        index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["account",information["account"]])
+    elif information["type"] == "post":
+        index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["post_link",information["post_link"]])
+    if index == [] or index == None:
+        return False
     return index[0][0]
 
 
