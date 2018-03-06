@@ -5,8 +5,16 @@ from steem import Steem
 import time
 import json
 
-def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, keyword_and_account = True, recent = 1, step = 10000, minblock = -1, node="wss://steemd.privex.io", not_all_accounts = True):
+def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", position=-1, recent = 1, step = 10000, minblock = -1, node="wss://steemd.privex.io", not_all_accounts = True):
     # minblock is blocks before current block
+    # account is the account that sent the memo
+    # sent-to is account that it was sent to
+    # keyword is what it looks for in the json ["type","account"] would bring back memos with the type account
+    # -1 position means the latest, anything else means a specific memo where the position is known
+    # step means how many actions it grabs at once
+    # notallaccounts is wether or not it looks at every account
+
+
     node_connection = create_connection(node)
     s = Steem(node=node_connection)
     memo_list = []
@@ -31,9 +39,7 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
             position = step +1
         if step > position:
             step = position - 1
-        print(3, position)
         while found:
-            print(found)
             # Checks if the
 
             if (recent > 0 and len(memo_list) > 0) and not_all_accounts:
@@ -44,72 +50,113 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
             history = s.get_account_history(sent_to, position, step)
             memos = get_memo(history)
             has_min_block = False
+            print(len(memos),keyword)
             for i in range(len(memos)-1, -1, -1):
+                # goes through memos one at a time, starting with latest
+                print(i, "here")
+
                 if len(memo_list) >= recent and not_all_accounts:
+                    # ends if there are enough memos
+                    print("here")
                     break
                 has_keyword = False
 
                 if memos[i][3] < minblock:
                     has_min_block = True
+                has_account = False
+                if memos[i][1] == account:
+                    has_account = True
                 if keyword != []:
+                    # checks if keyword is in the memo
+
+                    #print("HERE")
                     try:
                         new_memo = json.loads(str(memos[i][2]))
-                        print(new_memo)
-                        if new_memo[keyword[0]] == keyword[1]:
-                            has_keyword = True
-                    except:
+                     #   print(new_memo)
+                        for i in keyword:
+                      #      print(i)
+                            has_keyword = False
+                            # print(new_memo)
+                            #print(new_memo[i[0]], "This")
+                            if new_memo[i[0]] == i[1]:
+                                has_keyword = True
+                            if not has_keyword:
+                       #         print("this_pos")
+                                break
+                        #print("her")
+                    except Exception as e:
+                        #print(e)
                         pass
 
+                if has_keyword and has_account:
+                    memo_list.append(memos[i])
+                    print(memo_list)
 
-                has_account = memos[i][1] == account
-                #print(memos[i][1], account)
-                if keyword_and_account:
-                    if has_keyword and has_account:
+            print("here")
 
-                        memo_list.append(memos[i])
-                else:
-                    if has_account or has_keyword:
-                        #print("added")
-                        memo_list.append(memos[i])
-
-
-
-
-
-
-            if position == step+1 or has_min_block:
-
+            if position == step+1 or has_min_block or (recent <= len(memo_list) and not_all_accounts):
+                # ends if it has gone through all the memos, reached the min block, or has too many memos
+                print("break")
                 break
 
             elif position-step <= step:
                 position = step+1
 
             else:
+
                 position -=step
 
-
+        print(memo_list)
+        print("HEREEE")
         return memo_list
     # This checks if it has the keyword or is by the account
 
 
-def save_memo(information, to, account_from, active_key, transaction_size=0.001, asset="SBD", node="wss://steemd-int.steemit.com"):
+def save_memo(information, to, account_from, active_key, transaction_size=0.001, asset="SBD", node="wss://steemd-int.steemit.com",try_thing = [0,0]):
+    # print statements are because im testing rn
+    # This should send a memo and return the position
+
+    print("AAAAAAAAaa",information)
     index = None
-    node_connection = create_connection(node)
-    s = Steem(node=node_connection, keys=active_key)
-    print(to,account_from)
-    s.transfer(to,transaction_size,asset=asset,account=account_from, memo=json.dumps(information))
-    print("here")
-    if information["type"] == "account":
-        index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["account",information["account"]])
-    elif information["type"] == "post":
-        index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["post_link",information["post_link"]])
-    if index == [] or index == None:
-        return False
+    try:
+        print("CCCCCCCCCCCCCcccc")
+        node_connection = create_connection(node)
+        s = Steem(node=node_connection, keys=active_key)
+        s.transfer(to,transaction_size,asset=asset,account=account_from, memo=json.dumps(information))
+        print("DDDDDDDDDDDDDDDDD")
+        try_thing[0] = 0
+    except Exception as e:
+        print(e)
+        if try_thing[0] > 5:
+            try_thing[0] = 0
+            print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSssss")
+            return False
+        return save_memo(information,to,account_from,active_key,transaction_size,asset,node, try_number+1)
+    time.sleep(3)
+    print("BBBBBBBBBBBBBBb")
+    while index == None:
+        try:
+            if information["type"] == "account":
+                index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["account",information["account"]])
+            elif information["type"] == "post":
+                index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=["post_link",information["post_link"]])
+        except:
+            if try_thing[1] > 5:
+                try_thing[1] = 0
+                return False
+            elif index == [] or index == None:
+                try_thing[1] +=1
+                return save_memo(information,to,account_from,active_key,transaction_size,asset,node,try_thing)
+
+
+    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
     return index[0][0]
 
 
 
 def get_memo(history_list):
+    # this goes through every account action and sees if it is a transfer
+    # it then adds it to the list for the functions above to check
     memos = []
     for i in history_list:
         memo = []

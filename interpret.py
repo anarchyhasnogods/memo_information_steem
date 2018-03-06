@@ -7,7 +7,7 @@ import json
 
 def start_account(account_name,active_key, our_memo_account="space-pictures", our_sending_account="anarchyhasnogods", node="wss://steemd-int.steemit.com"):
     keyword_dict = {}
-
+    # creates account
 
     if True:
         keyword_dict["type"] = "account"
@@ -27,7 +27,7 @@ def start_account(account_name,active_key, our_memo_account="space-pictures", ou
     keyword_dict["account"] = account_name
 
     #info = list_to_full_string(real_list)
-    print("ddd", our_sending_account, our_memo_account)
+    #print("ddd", our_sending_account, our_memo_account)
 
     main.save_memo(keyword_dict, our_memo_account, our_sending_account, active_key)
 
@@ -35,8 +35,8 @@ def start_account(account_name,active_key, our_memo_account="space-pictures", ou
 
 
 def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account = "space-pictures"):
-
-    return_info = main.retrieve(["account",account], account=our_account, sent_to=our_memo_account)
+    # gets the useful account info for a specific account
+    return_info = main.retrieve([["account",account],["type","account"]], account=our_account, sent_to=our_memo_account)
 
     if return_info != []:
 
@@ -51,12 +51,12 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
     # Changes is composed of a list of changes
     #Each seperate change is [keyword,new_information]
     info = get_account_info(account,our_sending_account, our_memo_account)
-    print(info)
+    print("info",info)
 
     info_dict = info[2]
 
     for i in changes:
-        print(i)
+        #print(i)
         if i[0] == "vote":
             info_dict[i[0]].append(i[1])
         elif i[1] == "DELETE":
@@ -66,9 +66,8 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
             info_dict[i[0]] = i[1]
 
 
-
-
-    return main.save_memo(info_dict, our_memo_account, our_sending_account, active_key)
+    thing = list_to_full_string(info_dict,our_memo_account,our_sending_account,active_key)
+    return main.save_memo(thing, our_memo_account, our_sending_account, active_key)
 
 
 
@@ -76,20 +75,28 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
 
 
 def list_to_full_string(list_set,our_memo_account, our_sending_account, active_key):
+    # turns objects into info that can be used as json
+    # if its too long sends a static memo for votes
     dump_list = json.dumps(list_set)
+    dump_list = json.dumps(dump_list)
     total_len = len(dump_list)
+    print(total_len)
     if total_len > 2000:
-        vote_list_post = main.save_memo(json.dumps(list_set["vote"]), our_memo_account, our_sending_account, active_key)
+        vote_list_post = main.save_memo({"account":list_set["account"],"type":"vote-link","vote":list_set["vote"]}, our_memo_account, our_sending_account, active_key)
         list_set["vote"] = []
         list_set["vote-link"].append([vote_list_post, our_memo_account])
+    print(10,vote_list_post)
+    if vote_list_post:
 
-    return json.dumps(list_set)
+        return list_set
+    else:
+        return False
 
 
 
 
 def vote_post(post_link, submission_author, submission_time,vote_list, ratio, our_memo_account, our_sending_account, active_key,node):
-
+    # creates basic account memo
     json_thing = {}
     json_thing["type"] = "post"
     json_thing["post_link"] = post_link
@@ -97,23 +104,23 @@ def vote_post(post_link, submission_author, submission_time,vote_list, ratio, ou
     json_thing["time"] = str(submission_time)
     json_thing["ratio"] = str(ratio)
     json_thing["vote-list"] = vote_list
-    print(json_thing)
+    #print(json_thing)
 
     return main.save_memo(json_thing,our_memo_account, our_sending_account, active_key,node=node)
 
 
 def get_account_list(sending_account,memo_account_list, days = 7):
     block = days * 24 * 60 * 20
-    # checks up to 7 days ago
+    # checks up to 7 days ago by default
     memo_list = []
     temp_list = []
     accounts_in_list = {"accounts": []}
 
     for i in memo_account_list:
-        temp_list.append(main.retrieve(["type", "account"], sending_account, i, not_all_accounts = False, minblock=block))
+        temp_list.append(main.retrieve([["type", "account"]], sending_account, i, not_all_accounts = False, minblock=block))
         for ii in temp_list[0]:
             ii[2] = json.loads(ii[2])
-            if (ii[2]["account"] not in accounts_in_list["accounts"]):
+            if ii[2]["account"] not in accounts_in_list["accounts"]:
 
                 accounts_in_list["accounts"].append(ii[2]["account"])
                 accounts_in_list[ii[2]["account"]] = ii
@@ -126,8 +133,13 @@ def get_account_list(sending_account,memo_account_list, days = 7):
     return accounts_in_list
 
 
-def vote_link_create(account_memo, our_memo_account, our_sending_account, active_key,node, create_link_anyway = False):
+def vote_link_create(account_memo, our_memo_account, our_sending_account, active_key,node, create_link_anyway=False):
+    # if the memo is too large it makes a static memo that is saved on its account
+    print("this_thing")
     if len(json.dumps(account_memo)) > 2000 or create_link_anyway:
+        print(json.dumps(account_memo["vote"]))
+        print(account_memo["vote"])
+        print("this thing")
         index = main.save_memo(json.dumps(account_memo["vote"]), our_memo_account, our_sending_account, active_key, node=node)
         account_memo["vote"] = 0
         account_memo["vote-link"].append(index)
@@ -135,7 +147,7 @@ def vote_link_create(account_memo, our_memo_account, our_sending_account, active
 
 def get_vote_list(memo_account, sending_account, post_link, node):
 
-    return_info = main.retrieve(keyword=["post-link",post_link],account=sending_account, sent_to = memo_account, node=node)
+    return_info = main.retrieve(keyword=[["post-link",post_link]],account=sending_account, sent_to = memo_account, node=node)
 
 
     return return_info
