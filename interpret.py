@@ -36,6 +36,7 @@ def start_account(account_name,active_key, our_memo_account="space-pictures", ou
 
 def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account = "space-pictures"):
     # gets the useful account info for a specific account
+    print("getting account info")
     return_info = main.retrieve([["account",account],["type","account"]], account=our_account, sent_to=our_memo_account)
 
     if return_info != []:
@@ -51,10 +52,10 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
     # Changes is composed of a list of changes
     #Each seperate change is [keyword,new_information]
     info = get_account_info(account,our_sending_account, our_memo_account)
-    print("info",info)
+    #print("info",info)
 
     info_dict = info[2]
-
+    #print("THISS")
     for i in changes:
         #print(i)
         if i[0] == "vote":
@@ -65,8 +66,9 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
         else:
             info_dict[i[0]] = i[1]
 
-
+    print("AT THING")
     thing = list_to_full_string(info_dict,our_memo_account,our_sending_account,active_key)
+    print("THING MADE")
     return main.save_memo(thing, our_memo_account, our_sending_account, active_key)
 
 
@@ -77,20 +79,23 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
 def list_to_full_string(list_set,our_memo_account, our_sending_account, active_key):
     # turns objects into info that can be used as json
     # if its too long sends a static memo for votes
+    print("THIS999")
     dump_list = json.dumps(list_set)
     dump_list = json.dumps(dump_list)
     total_len = len(dump_list)
     print(total_len)
     if total_len > 2000:
+        print("TRY THIS")
         vote_list_post = main.save_memo({"account":list_set["account"],"type":"vote-link","vote":list_set["vote"]}, our_memo_account, our_sending_account, active_key)
+        print(" PAST THIS")
         list_set["vote"] = []
         list_set["vote-link"].append([vote_list_post, our_memo_account])
-    print(10,vote_list_post)
-    if vote_list_post:
 
-        return list_set
-    else:
-        return False
+
+    #print(list_set)
+    return list_set
+
+
 
 
 
@@ -137,9 +142,9 @@ def vote_link_create(account_memo, our_memo_account, our_sending_account, active
     # if the memo is too large it makes a static memo that is saved on its account
     print("this_thing")
     if len(json.dumps(account_memo)) > 2000 or create_link_anyway:
-        print(json.dumps(account_memo["vote"]))
-        print(account_memo["vote"])
-        print("this thing")
+        #print(json.dumps(account_memo["vote"]))
+        #print(account_memo["vote"])
+        #print("this thing")
         index = main.save_memo(json.dumps(account_memo["vote"]), our_memo_account, our_sending_account, active_key, node=node)
         account_memo["vote"] = 0
         account_memo["vote-link"].append(index)
